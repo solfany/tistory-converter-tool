@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Tistory 변환기</title>
+    <style>
+        /* 전체 페이지 스타일 */
+        body {
+            font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+            padding: 30px;
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: #f7f9fc;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        h2 {
+            color: #1a73e8;
+            margin-bottom: 20px;
+            font-weight: 600;
+            border-bottom: 2px solid #e6edf7;
+            padding-bottom: 10px;
+        }
+
+        h3 {
+            color: #444;
+            margin-top: 25px;
+            font-weight: 500;
+        }
+
+        /* 입력 영역 스타일 */
+        textarea {
+            width: 100%;
+            height: 250px;
+            margin: 10px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-family: 'Consolas', monospace;
+            font-size: 14px;
+            resize: vertical;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        textarea:focus {
+            border-color: #1a73e8;
+            box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+            outline: none;
+        }
+
+        /* 버튼 스타일 */
+        .button-container {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 500;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        button.convert {
+            background-color: #1a73e8;
+            color: white;
+        }
+
+        button.copy {
+            background-color: #34a853;
+            color: white;
+        }
+
+        button:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        /* 출력 영역 스타일 */
+        .output-container {
+            margin-top: 30px;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .output-header {
+            background-color: #e6edf7;
+            padding: 12px 20px;
+            font-weight: 500;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .output-box {
+            white-space: pre-wrap;
+            background: #fff;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 0 0 8px 8px;
+            font-family: 'Consolas', monospace;
+            font-size: 14px;
+            min-height: 150px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        /* 변환된 콘텐츠 미리보기 스타일 */
+        .output-preview {
+            margin-top: 30px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #fff;
+            padding: 20px;
+        }
+
+        .output-preview h4 {
+            border-bottom: 1px solid #eee;
+            padding-bottom: 8px;
+            margin-top: 20px;
+            color: #333;
+        }
+
+        /* 정답/풀이 토글 블록 스타일 */
+        .output-preview .정답,
+        .output-preview .풀이 {
+            margin: 15px 0;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+
+        .output-preview .btn-toggle-moreless {
+            display: block;
+            padding: 10px 15px;
+            background-color: #f5f7fa;
+            cursor: pointer;
+            border-radius: 6px 6px 0 0;
+            font-weight: 500;
+            color: #555;
+        }
+
+        .output-preview .moreless-content {
+            padding: 15px;
+            border-top: 1px solid #eee;
+        }
+
+        /* 테이블 스타일 */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+
+        table td,
+        table th {
+            border: 1px solid #ddd;
+            padding: 8px 12px;
+        }
+
+        table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        /* 코드 블록 스타일 */
+        pre {
+            background-color: #f6f8fa;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+
+        pre code {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        /* 알림 메시지 스타일 */
+        .alert {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            background-color: #34a853;
+            color: white;
+            border-radius: 6px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.3s ease;
+        }
+
+        .alert.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* 반응형 스타일 */
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+
+            .button-container {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <h2>Tistory 문제 변환기</h2>
+    <textarea id="input" placeholder="여기에 문제-정답-풀이 형식 또는 테이블을 붙여넣으세요..."></textarea>
+    <button onclick="convertToTistory()">변환하기</button>
+    <button onclick="copyOutput()">결과 복사하기</button>
+    <h3>🔽 변환된 HTML 🔽</h3>
+    <div id="output" class="output-box"></div>
+
+    <script>
+        function htmlEscape(str) {
+            return str.replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/\"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        function parseMarkdownTable(lines, startIndex) {
+            const rows = [];
+            let i = startIndex;
+            let headerSkipped = false;
+            while (i < lines.length && lines[i].includes("|")) {
+                const cells = lines[i].split("|").slice(1, -1).map(c => c.trim());
+                if (!headerSkipped && cells.every(cell => /^-+$/.test(cell))) {
+                    i++;
+                    headerSkipped = true;
+                    continue;
+                }
+                rows.push(cells);
+                i++;
+            }
+            let tableHtml = '<table style="border-collapse: collapse; width: 100%;" border="1" data-ke-align="alignLeft"><tbody>';
+            rows.forEach(row => {
+                tableHtml += '<tr>' + row.map(cell => `<td>${htmlEscape(cell)}</td>`).join('') + '</tr>';
+            });
+            tableHtml += '</tbody></table>';
+            return { html: tableHtml, nextIndex: i };
+        }
+
+        function convertToTistory() {
+            const input = document.getElementById("input").value;
+            const lines = input.split("\n");
+
+            let html = "";
+            let currentBlock = null;
+            let codeLines = [];
+            let inCode = false;
+
+            const flushBlock = () => {
+                if (currentBlock) {
+                    const type = currentBlock.type;
+                    const content = currentBlock.content.join("\n");
+                    html += `<div class="${type}" data-ke-type="moreLess" data-text-more="${type} 보기" data-text-less="${type} 닫기">`
+                        + `<a class="btn-toggle-moreless">더보기</a>`
+                        + `<div class="moreless-content">`
+                        + `<p data-ke-size="size16">#${type}#</p>`
+                        + `${content}`
+                        + `</div></div>`;
+                    currentBlock = null;
+                }
+            };
+
+            for (let i = 0; i < lines.length; i++) {
+                const raw = lines[i];
+                const line = raw.trim();
+
+                if (line.startsWith("```")) {
+                    inCode = !inCode;
+                    if (!inCode) {
+                        const code = codeLines.join("\n");
+                        const lang = code.trim().startsWith("import") ? "python" : "arduino";
+                        const codeBlock = `<pre class="${lang}"><code>${htmlEscape(code)}</code></pre>`;
+                        if (currentBlock) currentBlock.content.push(codeBlock);
+                        else html += codeBlock;
+                        codeLines = [];
+                    }
+                    continue;
+                }
+                if (inCode) {
+                    codeLines.push(raw);
+                    continue;
+                }
+
+                if (line.startsWith("|") && lines[i + 1] && lines[i + 1].includes("|")) {
+                    const { html: tableHtml, nextIndex } = parseMarkdownTable(lines, i);
+                    if (currentBlock) currentBlock.content.push(tableHtml);
+                    else html += tableHtml;
+                    i = nextIndex - 1;
+                    continue;
+                }
+
+                if (/^\*\*\d+\./.test(line)) {
+                    flushBlock();
+                    html += `<h4 data-ke-size="size20"><b>${line.replace(/^\*\*/, '').replace(/\*+$/, '')}</b></h4>`;
+                    continue;
+                }
+
+                if (line.startsWith("- 정답")) {
+                    flushBlock();
+                    currentBlock = { type: "정답", content: [] };
+                    continue;
+                }
+                if (line.startsWith("- 풀이")) {
+                    flushBlock();
+                    currentBlock = { type: "풀이", content: [] };
+                    continue;
+                }
+
+                if (line.startsWith("---")) {
+                    if (currentBlock) currentBlock.content.push(`<hr data-ke-style="style1" />`);
+                    else html += `<hr data-ke-style="style1" />`;
+                    continue;
+                }
+
+                if (line.startsWith("- ")) {
+                    const li = `<li>${htmlEscape(line.slice(2))}</li>`;
+                    if (currentBlock) {
+                        if (!currentBlock.inList) {
+                            currentBlock.content.push('<ul style="list-style-type: disc;" data-ke-list-type="disc">');
+                            currentBlock.inList = true;
+                        }
+                        currentBlock.content.push(li);
+                    } else {
+                        html += '<ul style="list-style-type: disc;" data-ke-list-type="disc">' + li;
+                    }
+                } else {
+                    if (currentBlock && currentBlock.inList) {
+                        currentBlock.content.push('</ul>');
+                        currentBlock.inList = false;
+                    }
+                    const p = `<p data-ke-size="size16">${htmlEscape(line)}</p>`;
+                    if (currentBlock) currentBlock.content.push(p);
+                    else html += p;
+                }
+            }
+
+            flushBlock();
+            html += '<p data-ke-size="size14">&nbsp;</p>\n'.repeat(4);
+            document.getElementById("output").innerHTML = html;
+        }
+
+        function copyOutput() {
+            const outputEl = document.getElementById("output");
+            const temp = document.createElement("textarea");
+            temp.value = outputEl.innerHTML;
+            document.body.appendChild(temp);
+            temp.select();
+            document.execCommand("copy");
+            document.body.removeChild(temp);
+            alert("복사되었습니다!");
+        }
+    </script>
+</body>
+
+</html>
